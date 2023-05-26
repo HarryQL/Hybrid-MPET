@@ -17,7 +17,7 @@ As the design of single-component battery electrodes has matured, the battery in
 
 ## Citation 
 
-Liang, Q., and Bazant, M.Z., 2023. Hybrid-MPET: an open-source simulation software for hybrid electrode batteries. arXiv preprint. 
+Liang, Q., and Bazant, M.Z., 2023. Hybrid-MPET: an open-source simulation software for hybrid electrode batteries. arXiv preprint. arXiv:2305.15599. (https://arxiv.org/pdf/2305.15599.pdf)
 
 
 ## Attribution
