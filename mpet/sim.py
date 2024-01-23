@@ -73,16 +73,23 @@ class SimMPET(dae.daeSimulation):
             # Solids
             for tr in config["trodes"]:
                 cs0 = config['cs0'][tr]
+                cs0_1 = config['cs0_1'][tr]
+                cs0_2 = config['cs0_2'][tr]
+                cs0_3 = config['cs0_3'][tr]
                 # Guess initial filling fractions
                 self.m.ffrac[tr].SetInitialGuess(cs0)
                 for i in range(Nvol[tr]):
                     # Guess initial volumetric reaction rates
-                    self.m.R_Vp[tr].SetInitialGuess(i, 0.0)
+                    # self.m.R_Vp[tr].SetInitialGuess(i, 0.0)
+
+                    self.m.R_Vp[tr].SetInitialGuess(i, 0.001)
+
                     # Guess initial value for the potential of the
                     # electrodes
                     if tr == "a":  # anode
                         self.m.phi_bulk[tr].SetInitialGuess(i, config["a", "phiRef"])
                     else:  # cathode
+                        # self.m.phi_bulk[tr].SetInitialCondition(i, phi_cathode)
                         self.m.phi_bulk[tr].SetInitialGuess(i, phi_cathode)
 
                     for j in range(Npart[tr]):
@@ -93,12 +100,12 @@ class SimMPET(dae.daeSimulation):
                         # solid concentrations
                         solidType = self.config[tr, "type"]
                         if solidType in constants.one_var_types:
-                            part.c3bar.SetInitialGuess(cs0)
+                            part.c3bar.SetInitialGuess(cs0_3)
                             for k in range(Nij):
-                                part.c3.SetInitialCondition(k, cs0)
+                                part.c3.SetInitialCondition(k, cs0_3)
                         elif solidType in constants.two_var_types:
-                            part.c1bar.SetInitialGuess(cs0)
-                            part.c2bar.SetInitialGuess(cs0)
+                            part.c1bar.SetInitialGuess(cs0_1)
+                            part.c2bar.SetInitialGuess(cs0_2)
                             # potentially need to change
                             part.cbar.SetInitialGuess(cs0)
                             epsrnd = 0.0001
@@ -107,8 +114,8 @@ class SimMPET(dae.daeSimulation):
                             rnd1 -= np.mean(rnd1)
                             rnd2 -= np.mean(rnd2)
                             for k in range(Nij):
-                                part.c1.SetInitialCondition(k, cs0+rnd1[k])
-                                part.c2.SetInitialCondition(k, cs0+rnd2[k])
+                                part.c1.SetInitialCondition(k, cs0_1+rnd1[k])
+                                part.c2.SetInitialCondition(k, cs0_2+rnd2[k])
 
                     for j in range(Npart[tr], Npart[tr]+Npart2[tr]):
                         Nij = config["psd_num"][tr][i,j]
@@ -118,12 +125,12 @@ class SimMPET(dae.daeSimulation):
                         # solid concentrations
                         solidType2 = self.config[tr, "type2"]
                         if solidType2 in constants.one_var_types:
-                            part.c3bar.SetInitialGuess(cs0)
+                            part.c3bar.SetInitialGuess(cs0_3)
                             for k in range(Nij):
-                                part.c3.SetInitialCondition(k, cs0)
+                                part.c3.SetInitialCondition(k, cs0_3)
                         elif solidType2 in constants.two_var_types:
-                            part.c1bar.SetInitialGuess(cs0)
-                            part.c2bar.SetInitialGuess(cs0)
+                            part.c1bar.SetInitialGuess(cs0_1)
+                            part.c2bar.SetInitialGuess(cs0_2)
                             # potentially need to change
                             part.cbar.SetInitialGuess(cs0)
                             epsrnd = 0.0001
@@ -132,8 +139,8 @@ class SimMPET(dae.daeSimulation):
                             rnd1 -= np.mean(rnd1)
                             rnd2 -= np.mean(rnd2)
                             for k in range(Nij):
-                                part.c1.SetInitialCondition(k, cs0+rnd1[k])
-                                part.c2.SetInitialCondition(k, cs0+rnd2[k])
+                                part.c1.SetInitialCondition(k, cs0_1+rnd1[k])
+                                part.c2.SetInitialCondition(k, cs0_2+rnd2[k])
 
 
 
@@ -144,6 +151,10 @@ class SimMPET(dae.daeSimulation):
                 phi_guess = config['Vset']
             elif config['profileType'] == 'CVsegments':
                 phi_guess = config['segments'][0][0]
+            elif config['profileType'] == 'CR':
+                phi_guess = config['Vset']
+            elif config['profileType'] == 'CRsegments':
+                phi_guess = config['Vset']
             else:
                 phi_guess = 0
             self.m.phi_applied.SetInitialGuess(phi_guess)
@@ -164,11 +175,15 @@ class SimMPET(dae.daeSimulation):
             for tr in config["trodes"]:
                 for i in range(Nvol[tr]):
                     self.m.c_lyte[tr].SetInitialCondition(i, config['c0'])
+                    # self.m.phi_lyte[tr].SetInitialCondition(i, 0)
                     self.m.phi_lyte[tr].SetInitialGuess(i, 0)
 
                     # Set electrolyte concentration in each particle
                     for j in range(Npart[tr]):
                         self.m.particles[tr][i,j].c_lyte.SetInitialGuess(config["c0"])
+                    if tr == 'c':
+                        for k in range(Npart[tr], Npart[tr]+Npart2[tr]):
+                            self.m.particles[tr][i,k].c_lyte.SetInitialGuess(config["c0"])
 
         else:
             dPrev = self.dataPrev
@@ -179,8 +194,8 @@ class SimMPET(dae.daeSimulation):
                 for i in range(Nvol[tr]):
                     self.m.R_Vp[tr].SetInitialGuess(
                         i, data["R_Vp_" + tr][-1,i])
-                    self.m.phi_bulk[tr].SetInitialGuess(
-                        i, data["phi_bulk_" + tr][-1,i])
+                    # self.m.phi_bulk[tr].SetInitialCondition(i, data["phi_bulk_" + tr][-1,i])
+                    self.m.phi_bulk[tr].SetInitialGuess(i, data["phi_bulk_" + tr][-1,i])
                     for j in range(Npart[tr]):
                         Nij = config["psd_num"][tr][i,j]
                         part = self.m.particles[tr][i,j]
@@ -262,8 +277,8 @@ class SimMPET(dae.daeSimulation):
                 for i in range(Nvol[tr]):
                     self.m.c_lyte[tr].SetInitialCondition(
                         i, data["c_lyte_" + tr][-1,i])
-                    self.m.phi_lyte[tr].SetInitialGuess(
-                        i, data["phi_lyte_" + tr][-1,i])
+                    # self.m.phi_lyte[tr].SetInitialCondition(i, data["phi_lyte_" + tr][-1,i])
+                    self.m.phi_lyte[tr].SetInitialGuess(i, data["phi_lyte_" + tr][-1,i])
 
             # Read in the ghost point values
             if not self.m.SVsim:

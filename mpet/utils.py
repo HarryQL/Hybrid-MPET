@@ -84,6 +84,28 @@ def get_asc_vec(var, Nvol, dt=False):
     out = np.hstack((varout["a"], varout["s"], varout["c"]))
     return out
 
+def get_asc_vec2(var, Nvol, porosity_vector, dt=False):
+    """Get a numpy array for a variable spanning the anode, separator, and cathode."""
+    varout = {}
+    varout["c"] = porosity_vector
+    for sectn in ["a", "s"]:
+        # If we have information within this battery section
+        if sectn in var.keys():
+            # If it's an array of dae variable objects
+            if isinstance(var[sectn], dae.pyCore.daeVariable):
+                varout[sectn] = get_var_vec(var[sectn], Nvol[sectn], dt)
+            # Otherwise, it's a parameter that varies with electrode section
+            else:
+                varout[sectn] = get_const_vec(var[sectn], Nvol[sectn])
+        # Otherwise, fill with zeros
+        else:
+            try:
+                varout[sectn] = np.zeros(Nvol[sectn])
+            except KeyError:
+                varout[sectn] = np.zeros(0)
+    out = np.hstack((varout["a"], varout["s"], varout["c"]))
+    return out
+
 
 def get_dxvec(L, Nvol):
     """Get a vector of cell widths spanning the full cell."""

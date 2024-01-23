@@ -16,6 +16,7 @@ import mpet.extern_funcs as extern_funcs
 import mpet.geometry as geom
 import mpet.mod_electrodes as mod_electrodes
 import mpet.ports as ports
+import mpet.props_am as props_am
 import mpet.props_elyte as props_elyte
 import mpet.utils as utils
 from mpet.config import constants
@@ -213,21 +214,25 @@ class ModCell(dae.daeModel):
                 vol_corr_f = config[trode, 'cap_ratio'] / raw_cap_ratio
 
                 corr_vol_frac = np.concatenate((raw_vol_frac[:Npart[trode]], raw_vol_frac[Npart[trode]:]* vol_corr_f))
+                capa_adj_vol_frac = corr_vol_frac / np.sum(np.concatenate((corr_vol_frac[:Npart[trode]] * config[trode, 'rho_s'], corr_vol_frac[Npart[trode]:] * 0.91*config[trode, 'rho_s2'])))
+                # capa_adj_vol_frac = corr_vol_frac / np.sum(np.concatenate((corr_vol_frac[:Npart[trode]] * config[trode, 'rho_s'], corr_vol_frac[Npart[trode]:] * config[trode, 'rho_s2'] * 0.91)))
 
-                # capa_adj_vol_frac = corr_vol_frac / np.sum(np.concatenate((corr_vol_frac[:Npart[trode]] * config[trode, 'rho_s'], corr_vol_frac[Npart[trode]:] * config[trode, 'rho_s2'])))
-                capa_adj_vol_frac = corr_vol_frac / np.sum(np.concatenate((corr_vol_frac[:Npart[trode]] * config[trode, 'rho_s'], corr_vol_frac[Npart[trode]:] * config[trode, 'rho_s2'] * 0.91)))
+                #corr_vol_frac = np.concatenate((raw_vol_frac[:Npart[trode]]*config[trode, 'rho_s'], raw_vol_frac[Npart[trode]:]* config[trode, 'rho_s2']))
+                #corr_vol_frac = raw_vol_frac/np.sum(corr_vol_frac)
+
 
                 for pInd in range(Npart[trode]):
                     # Vj = config["psd_vol_FracVol"][trode][vInd,pInd]
                     # tmp += self.particles[trode][vInd,pInd].cbar() * Vj * dx
-
                     Vj = capa_adj_vol_frac[pInd]
+                    #Vj = corr_vol_frac[pInd]
                     tmp += ((self.particles[trode][vInd,pInd].c1bar() * (1/3) * config[trode, 'rho_s']) + (self.particles[trode][vInd,pInd].c2bar() * (2/3) * config[trode, 'rho_s'])) * Vj * dx
 
 
                 for pInd2 in range(Npart[trode], Npart[trode]+Npart2[trode]):
                     Vj = capa_adj_vol_frac[pInd2]
-                    tmp += self.particles[trode][vInd,pInd2].c3bar() * config[trode, 'rho_s2'] * Vj * dx
+                    #Vj = corr_vol_frac[pInd2]
+                    tmp += self.particles[trode][vInd,pInd2].c3bar() * config[trode, 'rho_s2']* Vj * dx
 
             eq.Residual -= tmp
 
@@ -243,13 +248,17 @@ class ModCell(dae.daeModel):
                 # particle in the volume.
                 RHS = 0
 
+                raw_vol_frac = config["psd_vol_FracVol"][trode][vInd]
+
                 # raw_cap_ratio = (np.sum(raw_vol_frac[Npart[trode]:]) * config[trode, 'rho_s2']) / (np.sum(raw_vol_frac[:Npart[trode]]) * config[trode, 'rho_s'])
                 raw_cap_ratio = (np.sum(raw_vol_frac[Npart[trode]:]) * config[trode, 'rho_s2'] * 0.91) / (np.sum(raw_vol_frac[:Npart[trode]]) * config[trode, 'rho_s'])
 
                 vol_corr_f = config[trode, 'cap_ratio'] / raw_cap_ratio
 
                 corr_vol_frac = np.concatenate((raw_vol_frac[:Npart[trode]], raw_vol_frac[Npart[trode]:]* vol_corr_f))
-                corr_vol_frac = corr_vol_frac/np.sum(corr_vol_frac)
+                # new
+                # corr_vol_frac = np.concatenate((raw_vol_frac[:Npart[trode]], raw_vol_frac[Npart[trode]:]* vol_corr_f))
+                # corr_vol_frac = corr_vol_frac/ np.sum(corr_vol_frac)
 
                 # capa_adj_vol_frac = corr_vol_frac / np.sum(np.concatenate((corr_vol_frac[:Npart[trode]] * config[trode, 'rho_s'], corr_vol_frac[Npart[trode]:] * config[trode, 'rho_s2'])))
                 capa_adj_vol_frac = corr_vol_frac / np.sum(np.concatenate((corr_vol_frac[:Npart[trode]] * config[trode, 'rho_s'], corr_vol_frac[Npart[trode]:] * config[trode, 'rho_s2'] * 0.91)))
@@ -261,19 +270,32 @@ class ModCell(dae.daeModel):
                     # RHS += -(config["beta"][trode] * (1-config["poros"][trode])
                     #          * config["P_L"][trode] * Vj
                     #          * self.particles[trode][vInd,pInd].dcbardt())
-                    Vj = corr_vol_frac[pInd]
-                    RHS += -(config["beta"][trode] * (1-config["poros"][trode]) * config["P_L"][trode] * (1/3)* Vj * self.particles[trode][vInd,pInd].dc1bardt())
-                    RHS += -(config["beta"][trode] * (1-config["poros"][trode]) * config["P_L"][trode] * (2/3)* Vj * self.particles[trode][vInd,pInd].dc2bardt())
-                    # Vj = capa_adj_vol_frac[pInd]
-                    # RHS += -(config["beta"][trode] * (1-config["poros"][trode]) * config["P_L"][trode] * ((1/3) * config[trode, 'rho_s']) * Vj * self.particles[trode][vInd,pInd].dc1bardt())
-                    # RHS += -(config["beta"][trode] * (1-config["poros"][trode]) * config["P_L"][trode] * ((2/3) * config[trode, 'rho_s']) * Vj * self.particles[trode][vInd,pInd].dc2bardt())
+                    # Vj = config["psd_vol_FracVol"][trode][vInd,pInd]
+                    # RHS += -(config["beta"][trode] * (1-config["poros"][trode]) * config["P_L"][trode] * ((1/3)) * Vj * self.particles[trode][vInd,pInd].dc1bardt())
+                    # RHS += -(config["beta"][trode] * (1-config["poros"][trode]) * config["P_L"][trode] * ((2/3)) * Vj * self.particles[trode][vInd,pInd].dc2bardt())
+
+                    # Vj = corr_vol_frac[pInd]
+                    # RHS += -(config["beta"][trode] * (1-config["poros"][trode]) * config["P_L"][trode] * (1/3) * Vj * self.particles[trode][vInd,pInd].dc1bardt())
+                    # RHS += -(config["beta"][trode] * (1-config["poros"][trode]) * config["P_L"][trode] * (2/3) * Vj * self.particles[trode][vInd,pInd].dc2bardt())
+                    # RHS += -(config["beta"][trode] * (1-config["poros"][trode]) * config["P_L"][trode] * (1/3) * Vj * self.particles[trode][vInd,pInd].dc1bardt())*1
+                    # RHS += -(config["beta"][trode] * (1-config["poros"][trode]) * config["P_L"][trode] * (2/3) * Vj * self.particles[trode][vInd,pInd].dc2bardt())*2
+
+                    Vj = capa_adj_vol_frac[pInd]
+                    RHS += -(config["beta"][trode] * (1-config["poros"][trode]) * config["P_L"][trode] * ((1/3) * config[trode, 'rho_s']) * Vj * self.particles[trode][vInd,pInd].dc1bardt())
+                    #RHS += -(config["beta"][trode] * (1-config["poros"][trode]) * config["P_L"][trode] * ((1/3) * config[tr ode, 'rho_s']) * Vj * (self.particles[trode][vInd,pInd].dc1bardt() - config[trode, 'Cdl1']*(self.phi_bulk[trode].dt(vInd) - self.phi_lyte[trode].dt(vInd))))
+                    RHS += -(config["beta"][trode] * (1-config["poros"][trode]) * config["P_L"][trode] * ((2/3) * config[trode, 'rho_s']) * Vj * self.particles[trode][vInd,pInd].dc2bardt())
 
                 for pInd2 in range(Npart[trode], Npart[trode]+Npart2[trode]):
-                    Vj = corr_vol_frac[pInd2]
-                    RHS += -(config["beta"][trode] * (1-config["poros"][trode]) * config["P_L"][trode] * Vj * self.particles[trode][vInd,pInd2].dc3bardt())
 
-                    # Vj = capa_adj_vol_frac[pInd2]
-                    # RHS += -(config["beta"][trode] * (1-config["poros"][trode]) * config["P_L"][trode] * config[trode, 'rho_s2'] * Vj * self.particles[trode][vInd,pInd2].dc3bardt())
+                    # Vj = config["psd_vol_FracVol"][trode][vInd,pInd2]
+                    # RHS += -(config["beta"][trode] * (1-config["poros"][trode]) * config["P_L"][trode]  * Vj * self.particles[trode][vInd,pInd2].dc3bardt())
+
+                    # Vj = corr_vol_frac[pInd2]
+                    # # RHS += -(config["beta"][trode] * (1-config["poros"][trode]) * config["P_L"][trode]  * Vj * self.particles[trode][vInd,pInd2].dc3bardt())
+                    # RHS += -(config["beta"][trode] * (1-config["poros"][trode]) * config["P_L"][trode]  * Vj * self.particles[trode][vInd,pInd2].dc3bardt())*5.515
+
+                    Vj = capa_adj_vol_frac[pInd2]
+                    RHS += -(config["beta"][trode] * (1-config["poros"][trode]) * config["P_L"][trode] * config[trode, 'rho_s2'] * Vj * self.particles[trode][vInd,pInd2].dc3bardt())
 
                 eq.Residual = self.R_Vp[trode](vInd) - RHS
 
@@ -323,8 +345,14 @@ class ModCell(dae.daeModel):
                     # reference (set)
                     phi_tmp[-1] = config["phi_cathode"]
                 dx = config["L"][trode]/Nvol[trode]
-                dvg_curr_dens = np.diff(-poros_walls*config["sigma_s"][trode]
+                sigmafunc = props_am.sigmafuncs(config[trode, 'sigmafunc']).sigmafunc
+                # print(self.ffrac[trode].GetValue())
+                dvg_curr_dens = np.diff(-poros_walls*config["sigma_s"][trode] * sigmafunc(self.ffrac[trode]())
                                         * np.diff(phi_tmp)/dx)/dx
+
+                # tmp
+                # self.ffrac[trode]()
+
             # Actually set up the equations for bulk solid phi
             for vInd in range(Nvol[trode]):
                 eq = self.CreateEquation(
@@ -400,7 +428,11 @@ class ModCell(dae.daeModel):
                 # We assume BV kinetics with alpha = 0.5,
                 # exchange current density, ecd = k0_foil * c_lyte**(0.5)
                 cWall = .5*(ctmp[0] + ctmp[1])
-                ecd = config["k0_foil"]*cWall**0.5
+                # ecd = config["k0_foil"]*cWall**0.5
+
+                kLifunc = props_am.kLifuncs(config["kLifunc"]).kLifunc
+                ecd = config["k0_foil"]*kLifunc(self.ffrac['c']())*cWall**0.5
+
                 # -current = ecd*(exp(-eta/2) - exp(eta/2))
                 # note negative current because positive current is
                 # oxidation here
@@ -408,7 +440,10 @@ class ModCell(dae.daeModel):
                 # eta = 2*arcsinh(-current/(-2*ecd))
                 BVfunc = -self.current() / ecd
                 eta_eff = 2*np.arcsinh(-BVfunc/2.)
-                eta = eta_eff + self.current()*config["Rfilm_foil"]
+                # eta = eta_eff + self.current()*config["Rfilm_foil"]
+
+                Rfilmfunc = props_am.Rfilmfuncs(config["Rfilmfunc"]).Rfilmfunc
+                eta = eta_eff + self.current()*config["Rfilm_foil"]*Rfilmfunc(self.ffrac['c']())
 #                # Infinitely fast anode kinetics
 #                eta = 0.
                 # eta = mu_R - mu_O = -mu_O (evaluated at interface)
@@ -490,6 +525,22 @@ class ModCell(dae.daeModel):
                     )
             else:
                 eq.Residual = self.current()*(self.phi_applied() + ndDVref) - config["power"]
+        elif self.profileType == "CR":
+            # Constant external resistance, V/I = R
+            ndDVref = config["c", "phiRef"]
+            if 'a' in config["trodes"]:
+                ndDVref = config["c", "phiRef"] - config["a", "phiRef"]
+
+            eq = self.CreateEquation("Constant_Load_Constraint")
+            if config["tramp"] > 0:
+                eq.Residual = (self.phi_applied() + ndDVref)/ self.current() - (
+                    (config["phiPrev"] + ndDVref) / config["currPrev"]
+                    + (config["RESIS"] - ((config["phiPrev"]+ ndDVref)/config["currPrev"]))
+                    * (1 + np.exp(-dae.Time()/(config["tend"]*config["tramp"])))
+                    )
+            else:
+                eq.Residual = (self.phi_applied() + ndDVref)/config["RESIS"] - self.current()
+
         elif self.profileType == "CCsegments":
             if config["tramp"] > 0:
                 config["segments_setvec"][0] = config["currPrev"]
@@ -549,12 +600,38 @@ class ModCell(dae.daeModel):
                 eq = self.CreateEquation("applied_potential")
                 eq.Residual = self.phi_applied() - config["segments"][-1][0]
                 self.END_IF()
+        elif self.profileType == "CRsegments":
+            ndDVref = config["c", "phiRef"]
+            if 'a' in config["trodes"]:
+                ndDVref = config["c", "phiRef"] - config["a", "phiRef"]
+
+            # CRsegments implemented as discontinuous equations
+
+
+            # First segment
+            time = config["segments"][0][1]
+            self.IF(dae.Time() < dae.Constant(time*s), 1.e-3)
+            eq = self.CreateEquation("Constant_Load_Constraint")
+            eq.Residual = (self.phi_applied() + ndDVref)/config["segments"][0][0] - self.current()
+
+            # Middle segments
+            for i in range(1,len(config["segments"])-1):
+                time = time+config["segments"][i][1]
+                self.ELSE_IF(dae.Time() < dae.Constant(time*s), 1.e-3)
+                eq = self.CreateEquation("Constant_Load_Constraint")
+                eq.Residual = (self.phi_applied() + ndDVref)/config["segments"][i][0] - self.current()
+
+            # Last segment
+            self.ELSE()
+            eq = self.CreateEquation("Constant_Load_Constraint")
+            eq.Residual = (self.phi_applied() + ndDVref)/config["segments"][-1][0] - self.current()
+            self.END_IF()
 
         for eq in self.Equations:
             eq.CheckUnitsConsistency = False
 
         # Ending conditions for the simulation
-        if self.profileType in ["CC", "CCsegments"]:
+        if self.profileType in ["CC", "CCsegments", "CR", "CRsegments"]:
             # Vmax reached
             self.ON_CONDITION((self.phi_applied() <= config["phimin"])
                               & (self.endCondition() < 1),

@@ -174,9 +174,13 @@ class DerivedValues:
             return self.config[trode, 'rho_s'] / constants.N_A
 
         else:
+            # V_ratio_correct = self.config[trode, 'cap_ratio']* (self.config[trode, 'rho_s'] / (self.config[trode, 'rho_s2']))
+            # rho_s_avg = (V_ratio_correct * self.config[trode, 'rho_s2'] + 1 * self.config[trode, 'rho_s'])/(V_ratio_correct + 1)
             V_ratio_correct = self.config[trode, 'cap_ratio']* (self.config[trode, 'rho_s'] / (self.config[trode, 'rho_s2']*0.91))
             rho_s_avg = (V_ratio_correct * self.config[trode, 'rho_s2']*0.91 + 1 * self.config[trode, 'rho_s'])/(V_ratio_correct + 1)
             return rho_s_avg / constants.N_A
+            # return (1/3) * (self.config[trode, 'rho_s']/ constants.N_A)
+
         # return self.config[trode, 'rho_s'] / constants.N_A
 
     def cap(self, trode):
@@ -238,11 +242,15 @@ class DerivedValues:
         """
         muRfunc = props_am.muRfuncs(self.config, trode).muRfunc
         cs0bar = self.config['cs0'][trode]
+        cs0_1 = self.config['cs0_1'][trode]
+        cs0_2 = self.config['cs0_2'][trode]
         cs0 = np.array([cs0bar])
+        cs0_1_ = np.array([cs0_1])
+        cs0_2_ = np.array([cs0_2])
 
         solidType = self.config[trode, 'type']
         if solidType in constants.two_var_types:
-            muR_ref = -muRfunc((cs0, cs0), (cs0bar, cs0bar), 0.)[0][0]
+            muR_ref = -muRfunc((cs0_1_, cs0_2_), (cs0_1, cs0_2), 0.)[0][0]
         elif solidType in constants.one_var_types:
             muR_ref = -muRfunc(cs0, cs0bar, 0.)[0]
         else:

@@ -4,6 +4,131 @@ import numpy as np
 import mpet.geometry as geo
 from mpet.config import constants
 
+class sigmafuncs():
+
+    def __init__(self, sigmafunc):
+        sigmaopts = {}
+        sigmaopts['constant'] = self.constant
+        sigmaopts['custom1'] = self.custom1
+        sigmaopts['custom1_mid'] = self.custom1_mid
+        sigmaopts['custom1_low'] = self.custom1_low
+        sigmaopts['custom1_mix'] = self.custom1_mix
+        sigmaopts['custom_exp'] = self.custom_exp
+        sigmaopts['custom_exp2'] = self.custom_exp2
+        sigmaopts['custom_exp3'] = self.custom_exp3
+        sigmaopts['custom_design_low'] = self.custom_design_low
+        self.sigmafunc = sigmaopts[sigmafunc]
+
+    def constant(self, y):
+        return 1.
+
+    def custom1(self, y):
+        a1 =-1.11239062854913
+        b1 =0.315723658193075
+        c1 =0.0310390627398842
+        a2 =11973.9288219987
+        b2 =2.73645936763567
+        c2 =0.544339695594774
+        a3 =0
+        b3 =-9.81089780262787
+        c3 =0.00262913388145669
+        a4 =7.08755376180519
+        b4 =0.264458459887164
+        c4 =0.126447829811828
+        a5 =1.04903014525017
+        b5 =0.597969984519493
+        c5 =0.132082914736046
+        return a1*np.exp(-((y-b1)/c1)**2) + a2*np.exp(-((y-b2)/c2)**2) +a3*np.exp(-((y-b3)/c3)**2) + a4*np.exp(-((y-b4)/c4)**2) +a5*np.exp(-((y-b5)/c5)**2)
+
+    def custom1_mid(self, y):
+        a1=0.631134107695653
+        b1=0.272191928046006
+        c1=0.0260856071547557
+        a2=6.61092284887808
+        b2=0.246113978563317
+        c2=0.112403788444996
+        a3=0.0
+        b3=-22.3885818663665
+        c3=3.06526598740341
+        a4=1.07443206507807
+        b4=0.576128821541168
+        c4=0.225323862100736
+        a5=1.13019158587323
+        b5=0.369778392700667
+        c5=0.0336035139775979
+
+        return a1*np.exp(-((y-b1)/c1)**2) + a2*np.exp(-((y-b2)/c2)**2) +a3*np.exp(-((y-b3)/c3)**2) + a4*np.exp(-((y-b4)/c4)**2) +a5*np.exp(-((y-b5)/c5)**2)
+
+
+    def custom1_low(self, y):
+        a1 =0.614103757698879
+        b1 =0.803718464626244
+        c1 =0.528093418833514
+        a2 =2.97161938719491
+        b2 =0.319276230290737
+        c2 =0.107096305077622
+        a3 =0.226731861002967
+        b3 =0.525996116218349
+        c3 =0.0668192003512049
+        a4 =5.08939503071113
+        b4 =0.226451822227103
+        c4 =0.0928002488435098
+    #     a5 =4.33486260623102
+    #     b5 =0.271934666442693
+    #     c5 =0.132291340213731
+
+        return a1*np.exp(-((y-b1)/c1)**2) + a2*np.exp(-((y-b2)/c2)**2) +a3*np.exp(-((y-b3)/c3)**2) + a4*np.exp(-((y-b4)/c4)**2)
+
+    def custom1_mix(self, y):
+        return (self.custom1(y) + self.custom1_mid(y) + self.custom1_low(y))/ 3
+
+    def custom_exp(self, y):
+        a1 =5.1161252172975
+        b1 =0.216270537722703
+        c1 =0.238193259582719
+        a2 =8.66799996734116
+        b2 =0.627303203266681
+        c2 =0.400666436484809
+        return a1*np.exp(-((y-b1)/c1)**2) + a2*np.exp(-((y-b2)/c2)**2)
+
+    def custom_exp2(self, y):
+        a1 =9.06100497361239
+        b1 =0.439089187035436
+        c1 =0.381559908648431
+        a2 =1.71871983516742
+        b2 =0.175441510245089
+        c2 =0.165650987480684
+        return a1*np.exp(-((y-b1)/c1)**2) + a2*np.exp(-((y-b2)/c2)**2)
+
+    def custom_exp3(self, y):
+        a1 =10.535144971817857
+        b1 =0.814830305069119
+        c1 =0.534797612892019
+        a2 =4.877164282385152
+        b2 =0.204530993417729
+        c2 =0.209613899005338
+        a3 =1.461815254718133
+        b3 =0.395469849194017
+        c3 =0.117833355192806
+        return a1*np.exp(-((y-b1)/c1)**2) + a2*np.exp(-((y-b2)/c2)**2) + a3*np.exp(-((y-b3)/c3)**2)
+
+    def custom_design_low(self, y):
+        a0=16.2286581023396
+        a1=0.365737915446761
+        b1=-20.0052442755857
+        a2=-15.2018714985282
+        b2=-5.99054149464293
+        a3=-5.04723196601268
+        b3=6.84458148562386
+        a4=2.72493456982476
+        b4=2.73311205030866
+        a5=1.01544097000561
+        b5=-0.324579365923269
+        w=6.55562654116442
+
+        return a0 + a1*np.cos(y*w)+ b1*np.sin(y*w)+ a2*np.cos(2*y*w)+ b2*np.sin(2*y*w)+ a3*np.cos(3*y*w)+ b3*np.sin(3*y*w)+ a4*np.cos(4*y*w)+ b4*np.sin(4*y*w)+ a5*np.cos(5*y*w)+ b5*np.sin(5*y*w)
+
+
 
 class Dfuncs():
     """This class returns the filling-fraction dependent variation of
@@ -17,10 +142,21 @@ class Dfuncs():
     solution (_ss) and materials based on simpler thermodynamic models.
     """
 
+
     def __init__(self, Dfunc):
         Dopts = {}
         Dopts['lattice'] = self.lattice
         Dopts['constant'] = self.constant
+        Dopts['custom3'] = self.custom3
+        Dopts['custom1_mid'] = self.custom1_mid
+        Dopts['custom2_mid'] = self.custom2_mid
+        Dopts['custom3_mid'] = self.custom3_mid
+        Dopts['custom4_mid'] = self.custom4_mid
+        Dopts['custom5_mid'] = self.custom5_mid
+        Dopts['custom6_mid'] = self.custom6_mid
+        Dopts['custom7_mid'] = self.custom7_mid
+        Dopts['custom1_low'] = self.custom1_low
+        Dopts['custom1_mix'] = self.custom1_mix
         self.Dfunc = Dopts[Dfunc]
 
     def constant(self, y):
@@ -28,6 +164,259 @@ class Dfuncs():
 
     def lattice(self, y):
         return y*(1-y)
+
+    def custom3(self, y):
+        a0 = 1.47265551030696*10**(-15)
+        a1 = 7.84011415965682*10**(-16)
+        b1 = -1.08634742846511*10**(-15)
+        a2 = -1.26849184549397*10**(-16)
+        b2 = -3.50368625478569*10**(-16)
+        w = 4.07999045920752
+        return (a0 + a1*np.cos(y*w)+ b1*np.sin(y*w)+ a2*np.cos(2*y*w)+ b2*np.sin(2*y*w))/(5*10**(-16))
+    def custom1_mid(self, y):
+        a0 = 5.24046359930457*10**(-16)
+        a1 = 6.71641548863033*10**(-17)
+        b1 = -4.70437257502231*10**(-17)
+        a2 = -3.25290637416018*10**(-18)
+        b2 = -3.50707382157863*10**(-17)
+        w = 4.00713348672168
+        return (a0 + a1*np.cos(y*w)+ b1*np.sin(y*w)+ a2*np.cos(2*y*w)+ b2*np.sin(2*y*w))/(5*10**(-16))
+
+
+    def custom2_mid(self, y):
+        a0 = 1.02759348991012*10**(-15)
+        a1 = -2.96157327252685*10**(-16)
+        b1 = -8.35605061031513*10**(-16)
+        a2 = -3.21777650934669*10**(-16)
+        b2 = 2.92120601568872*10**(-16)
+        a3 = 9.24655388670179*10**(-17)
+        b3 = 3.97685114030883*10**(-17)
+        w = 2.74494770955858
+        return (a0 + a1*np.cos(y*w)+ b1*np.sin(y*w)+ a2*np.cos(2*y*w)+ b2*np.sin(2*y*w) + a3*np.cos(3*y*w)+ b3*np.sin(3*y*w))/(5*10**(-16))
+
+    def custom3_mid(self, y):
+
+        p1 =34.2286369254162
+        p2 =-88.8027328121971
+        p3 =93.3124628565447
+        p4 =-54.7228246554853
+        p5 =21.6595614609822
+        p6 =-6.41408107148133
+        p7 =1.35196667363861
+        p8 =-0.19128969116873
+        p9 =-15.306847193439
+        return (10**(p1*y**8 + p2*y**7 + p3*y**6 + p4*y**5 + p5*y**4 + p6*y**3 + p7*y**2 + p8*y + p9)) /(5*10**(-16))
+
+    def custom4_mid(self, y):
+        p1 =-15.5340908523484
+        p2 =33.160056744686
+        p3 =-13.6443943716574
+        p4 =-15.6995792032625
+        p5 =15.1907969904133
+        p6 =-3.61169759197661
+        q1 =-2.13096823891331
+        q2 =0.867824275098675
+        q3 =1.0218735602065
+        q4 =-0.983204077681832
+        q5 =0.233439498299931
+        return 10**((p1*y**5 + p2*y**4 + p3*y**3 + p4*y**2+ p5*y+ p6)/(y**5 + q1*y**4 + q2*y**3 + q3*y**2+ q4*y+ q5)) /(5*10**(-16))
+
+    def custom5_mid(self, y):
+        p1 =-15.3839910572732
+        p2 =-22.3498341092738
+        p3 =2.25918213486115
+        p4 =39.9344135710357
+        p5 =17.6206074995782
+        p6 =-27.1242374271543
+        q1 =1.45502681505354
+        q2 =-0.131778063592997
+        q3 =-2.61491426340857
+        q4 =-1.15019355512244
+        q5 =1.77066594929798
+        return 10**((p1*y**5 + p2*y**4 + p3*y**3 + p4*y**2+ p5*y+ p6)/(y**5 + q1*y**4 + q2*y**3 + q3*y**2+ q4*y+ q5)) /(5*10**(-16))
+
+    def custom6_mid(self, y):
+        p1 =-15.534284568355782
+        p2 =-11.554870941970011
+        p3 =4.918792282832964
+        p4 =18.324321469185563
+        p5 =18.599864249560195
+        p6 =-20.998099023131541
+        q1 =0.791373664318053
+        q2 =-0.339326895555531
+        q3 =-1.198292436203694
+        q4 =-1.230170377304700
+        q5 =1.383417091213740
+        return 10**((p1*y**5 + p2*y**4 + p3*y**3 + p4*y**2+ p5*y+ p6)/(y**5 + q1*y**4 + q2*y**3 + q3*y**2+ q4*y+ q5)) /(5*10**(-16))
+
+    def custom7_mid(self, y):
+        p1 =-15.389158274806022
+        p2 =31.140004480433017
+        p3 =-8.302705179538862
+        p4 =-24.442830384447589
+        p5 =22.624127792999833
+        p6 =-5.930495796561357
+        q1 =-2.015402956660859
+        q2 =0.510831465873819
+        q3 =1.627178795342191
+        q4 =-1.493814996264665
+        q5 =0.390812139966707
+
+        return 10**((p1*y**5 + p2*y**4 + p3*y**3 + p4*y**2+ p5*y+ p6)/(y**5 + q1*y**4 + q2*y**3 + q3*y**2+ q4*y+ q5))
+
+    def custom1_low(self, y):
+        a0 = 1.14907525660876*10**(-15)
+        a1 = 4.48545291585507*10**(-16)
+        b1 = -7.05449089826032*10**(-16)
+        a2 = -9.74118198082059*10**(-17)
+        b2 = -1.4268753889296*10**(-16)
+        w = 3.95168887243999
+        return (a0 + a1*np.cos(y*w)+ b1*np.sin(y*w)+ a2*np.cos(2*y*w)+ b2*np.sin(2*y*w))/(5*10**(-16))
+
+    def custom1_mix(self, y):
+        return (self.custom3(y) + self.custom1_mid(y) + self.custom1_low(y))/ 3
+
+class kLifuncs():
+
+    def __init__(self, kLifunc):
+        kLiopts = {}
+        kLiopts['constant'] = self.constant
+        kLiopts['custom_mid'] = self.custom_mid
+        kLiopts['custom2_mid'] = self.custom2_mid
+        kLiopts['custom5_mid'] = self.custom5_mid
+        kLiopts['custom6_mid'] = self.custom6_mid
+        kLiopts['custom7_mid'] = self.custom7_mid
+        self.kLifunc = kLiopts[kLifunc]
+
+    def constant(self, y):
+        return 1
+
+    def custom_mid(self, y):
+        a = 0.990754082767668
+        b = 9.60529528427668
+        c =-16.7458287647686
+        m = -28.4923425695893
+        n = 0.501544182876847
+        r = -1.77212306347445
+
+        return 10**(2.6/(a+np.exp(-b*y+c)) -2.2/(n+np.exp(-m*y+r)))
+
+    def custom2_mid(self, y):
+        a = 1.02942500588641
+        b = 8.99863845919693
+        c =-16.2509939788027
+        m =-25.3929903996158
+        n = 0.348721104422145
+        r = -1.41423445971999
+
+        return 10**(3/(a+np.exp(-b*y+c)) -2.2/(n+np.exp(-m*y+r)))
+
+    def custom5_mid(self, y):
+        a = 0.898307777851485
+        b = 36.6532681948738
+        c =2.119116695964
+        m =0.0820834543614888
+        n =4.35293222785387
+        r =-0.338036018293395
+
+        return 10**(3/(a+np.exp(-b*y+c)) -2.2/(n+np.exp(-m*y+r)))
+
+    def custom6_mid(self, y):
+        a = 0.998991455415107
+        b = 8.670386813179991
+        c = -25.942946335557011
+        m =-31.448461485490228
+        n = 0.311387105405065
+        r = -2.623498506020950
+
+        return 10**(2.6/(a+np.exp(-b*y+c)) -1.2/(n+np.exp(-m*y+r)))
+
+    def custom7_mid(self, y):
+        a = 0.785249980029520
+        b = 6.555323684927352
+        c = -16.564952401956099
+        m = -34.630433392544049
+        n = 0.281738006742055
+        r = -3.045705181603137
+
+        return 10**(2.6/(a+np.exp(-b*y+c)) -1.2/(n+np.exp(-m*y+r)))
+
+
+
+class Rfilmfuncs():
+
+    def __init__(self, Rfilmfunc):
+        Rfilmopts = {}
+        Rfilmopts['constant'] = self.constant
+        Rfilmopts['custom_mid'] = self.custom_mid
+        Rfilmopts['custom2_mid'] = self.custom2_mid
+        Rfilmopts['custom3_mid'] = self.custom3_mid
+        Rfilmopts['custom4_mid'] = self.custom4_mid
+        self.Rfilmfunc = Rfilmopts[Rfilmfunc]
+
+    def constant(self, y):
+        return 1
+
+    def custom_mid(self, y):
+        a0 = 0.196398223205289
+        a1 = -0.219593351032325
+        b1 = -0.235110246185945
+        a2 = -0.011549382462294
+        b2 = 0.172539926621049
+        a3 = 0.0430690080295571
+        b3 = -0.0356883957437408
+        a4 = -0.00829710911565918
+        b4 = -0.000887770550027742
+        w = 3.32654876491931
+        return a0 + a1*np.cos(y*w)+ b1*np.sin(y*w)+ a2*np.cos(2*y*w)+ b2*np.sin(2*y*w) + a3*np.cos(3*y*w)+ b3*np.sin(3*y*w) + a4*np.cos(4*y*w)+ b4*np.sin(4*y*w)
+
+    def custom2_mid(self, y):
+        a0 = -4.45707464610095
+        a1 = -0.314587327364548
+        b1 = -0.702461771788783
+        a2 = -0.153754085249938
+        b2 = -0.0567509023480456
+        a3 = -0.156339572248037
+        b3 = 0.046764255783031
+        a4 = -0.0327049839944974
+        b4 = -0.00690390154452286
+        a5 = -0.00867054907535169
+        b5 = 0.0581858856748892
+        w = 8.79044332072256
+        return 10**(a0 + a1*np.cos(y*w)+ b1*np.sin(y*w)+ a2*np.cos(2*y*w)+ b2*np.sin(2*y*w) + a3*np.cos(3*y*w)+ b3*np.sin(3*y*w) + a4*np.cos(4*y*w)+ b4*np.sin(4*y*w)+ a5*np.cos(5*y*w)+ b5*np.sin(5*y*w))
+
+    def custom3_mid(self, y):
+        p1 =-2.71649169521244
+        p2 =0.538469290139425
+        p3 =2.64314601040722
+        p4 =-2.16378616733113
+        p5 =0.660411476458034
+        p6 =-0.0734683342209862
+        q1 =-0.692741838529293
+        q2 =-0.221751923738117
+        q3 =0.346845357296604
+        q4 =-0.118575048968982
+        q5 =0.0137143584680668
+
+
+        return 10**((p1*y**5 + p2*y**4 + p3*y**3 + p4*y**2+ p5*y+ p6)/(y**5 + q1*y**4 + q2*y**3 + q3*y**2+ q4*y+ q5))
+
+    def custom4_mid(self, y):
+        p1 = -2.359053359214419
+        p2 = 0.753900208305855
+        p3 = 1.597847465607573
+        p4 = -1.261476708681014
+        p5 = 0.344672107553635
+        p6 = -0.033676396760198
+        q1 = -0.864844823595020
+        q2 = 0.059040778287494
+        q3 = 0.154800174506188
+        q4 = -0.056988627978934
+        q5 = 0.006209820678795
+
+        return 10**((p1*y**5 + p2*y**4 + p3*y**3 + p4*y**2+ p5*y+ p6)/(y**5 + q1*y**4 + q2*y**3 + q3*y**2+ q4*y+ q5))
+
+
 
 
 class muRfuncs():
@@ -366,6 +755,101 @@ class muRfuncs():
         # actR = None
         return muR, actR
 
+    def LiCF4_ss(self, y, ybar, muR_ref, ISfuncs=None):
+        """
+        CFx (x=1) discharge OCV from Gomadam Comsol
+        """
+        goma_coms = (3.426177769+1317.958327*y+9596.394751*y**2-12208.74244*y**3)/(1+527.3952345*y+3570.78942*y**2-4231.792944*y**3-361.6223807*y**4)
+
+        # OCV = goma_coms - (1/0.57)*((310.15*1.38e-23)/(1.602e-19))*np.log((3*1.908/(3.8277e-9*2.75e6)) * 1e-7 * y * (1-y)**(1/3))
+        OCV = 0+goma_coms - (1/0.57)*((310.15*1.38e-23)/(1.602e-19))*np.log((3*1.908/(1e-6*2.75e6)) * 1e-5 * y * (1-y)**(1/3))
+        # OCV = goma_coms - (1/0.57)*((310.15*1.38e-23)/(1.602e-19))*np.log((3*1.908/(self.get_trode_param("mean2")*2.75e6)) * self.get_trode_param("k2") * y * (1-y)**(1/3))
+
+
+        muR = self.get_muR_from_OCV(OCV, muR_ref)
+        actR = None
+        # EoKT = constants.e / (constants.k * 310.15)
+        # muR = -EoKT*OCV + muR_ref
+        # actR = None
+        return muR, actR
+
+    def LiCF5_ss(self, y, ybar, muR_ref, ISfuncs=None):
+        """
+        CFx (x=1) discharge OCV from Gomadam Comsol
+        """
+        goma_coms = (3.426177769+1317.958327*y+9596.394751*y**2-12208.74244*y**3)/(1+527.3952345*y+3570.78942*y**2-4231.792944*y**3-361.6223807*y**4)
+
+        # OCV = goma_coms - (1/0.57)*((310.15*1.38e-23)/(1.602e-19))*np.log((3*1.908/(3.8277e-9*2.75e6)) * 1e-7 * y * (1-y)**(1/3))
+        OCV = + 0.01 - 0.08*(0.18-y)+goma_coms - (1/0.57)*((310.15*1.38e-23)/(1.602e-19))*np.log((3*1.908/(1e-6*2.75e6)) * 1e-5 * y * (1-y)**(1/3))
+        # OCV = goma_coms - (1/0.57)*((310.15*1.38e-23)/(1.602e-19))*np.log((3*1.908/(self.get_trode_param("mean2")*2.75e6)) * self.get_trode_param("k2") * y * (1-y)**(1/3))
+
+
+        muR = self.get_muR_from_OCV(OCV, muR_ref)
+        actR = None
+        # EoKT = constants.e / (constants.k * 310.15)
+        # muR = -EoKT*OCV + muR_ref
+        # actR = None
+        return muR, actR
+
+    def LiSi_DeLi_ss(self, y, ybar, muR_ref, ISfuncs=None):
+        """
+        Si Delithiation 2023
+        """
+        a =-0.00588731077882632
+        b =0.948060714071423
+        bb =0.362020695953494
+        c =-1.0929719146036
+        cc =0.230243434621118
+        d =2.88578320867775
+        dd =-2.02658195341187
+        e = -1.66957510133694
+        ee =1.56813539818296
+        f = -2.13252949510444
+        ff =1.18127524811439
+        g =0.528989739814381
+        gg =1.04637994155614
+        h =1.8952245260347
+        hh =-2.24873010707051
+        k =-0.509263799951346
+        OCV =  a*np.log(y/(1-y)) + b + (c*y + d*y**2+ e*y**3+ f*y**4+ g*y**5+ h*y**6 +
+                         k*y**7)/(bb + cc*y + dd*y**2+ ee*y**3+ ff*y**4+ gg*y**5+hh*y**6)
+
+        muR = self.get_muR_from_OCV(OCV, muR_ref)
+        actR = None
+        # EoKT = constants.e / (constants.k * 310.15)
+        # muR = -EoKT*OCV + muR_ref
+        # actR = None
+        return muR, actR
+
+    def LiSi_Li_ss(self, y, ybar, muR_ref, ISfuncs=None):
+        """
+        Si Lithiation 2023
+        """
+        a =-0.0836650628158838
+        b =0.284240463531336
+        bb =0.00734884061487265
+        c =0.0216516264965879
+        cc =0.13124492283084
+        d =-0.710622455588877
+        dd =1.1580840418446
+        e = 2.67311331694277
+        ee =-1.12044805260863
+        f = -3.7620463488108
+        ff =-0.289863721558452
+        g =0.24585013210871
+        gg =0.789899264851894
+        h =3.58781848387559
+        hh =-0.656888102352765
+        k =-2.04969882841769
+        OCV =  a*np.log(y/(1-y)) + b + (c*y + d*y**2+ e*y**3+ f*y**4+ g*y**5+ h*y**6 +
+                         k*y**7)/(bb + cc*y + dd*y**2+ ee*y**3+ ff*y**4+ gg*y**5+hh*y**6)
+        muR = self.get_muR_from_OCV(OCV, muR_ref)
+        actR = None
+        # EoKT = constants.e / (constants.k * 310.15)
+        # muR = -EoKT*OCV + muR_ref
+        # actR = None
+        return muR, actR
+
 
     def NCA_ss1(self, y, ybar, muR_ref, ISfuncs=None):
         """
@@ -502,6 +986,24 @@ class muRfuncs():
         muR = 0.18 + muLMod + muLtail + muRtail + muLlin + muRlin
         return muR
 
+    def graphite_1param_homog_Liang(self, y, Omga, Omgb, ISfuncs=None):
+        """ 2023 Si/C"""
+        width = 5e-2
+        tailScl = 5e-2
+        muLtail = -tailScl*1./(y**(0.55))
+        muRtail = 0.7e1*step_up(y, 1.0, 0.015)
+        muLlin = (0.15*Omga*12*(0.17-y**0.98)
+                  * step_down(y, 0.55, 0.9*width)*step_up(y, 0.38, width))
+        muRlin = (0.1*Omga*4*(0.74-y) + 0.55*Omgb - 2*(1-y))*step_up(y, 0.6, 0.8*width)
+        muLMod = (0.
+                  + (30*(-np.exp(-y/0.025))- 2*(1-y))*step_down(y, 0.035, width)
+                  + 0.7*(np.tanh((y-0.37)/0.075) - 1)
+                  + 0.8*(np.tanh((y-0.2)/0.06) - 1)
+                  + 0.38*(np.tanh((y-0.14)/0.015) - 1)
+                  )*step_down(y, 0.42, width)
+        muR = -0.02 + muLMod + muLtail + muRtail + muLlin + muRlin
+        return muR
+
     def non_homog_rect_fixed_csurf(self, y, ybar, B, kappa, ywet):
         """ Helper function """
         N = len(y)
@@ -565,66 +1067,18 @@ class muRfuncs():
                 muR_nh = (0*y[0], 0*y[1])
         return muR_nh
 
+
+
     def LiAgO(self, y, ybar, muR_ref, ISfuncs=None):
         """ Harry QL """
         muRtheta = -self.eokT*3.24
         muRhomog = self.reg_sln(y, self.get_trode_param("Omega_a"), ISfuncs)
-        muR = muRhomog
+        muRnonHomog = self.general_non_homog(y, ybar)
+        muR = muRhomog + muRnonHomog
         actR = np.exp(muR/self.T)
         muR += muRtheta + muR_ref
         return muR, actR
 
-
-    def LiAgO_5(self, y, ybar, muR_ref, ISfuncs=None):
-        """ Harry QL """
-        muRtheta = -self.eokT*3.24
-        muR_IS = self.ideal_sln(y, ISfuncs=ISfuncs)
-
-        Omga = self.get_trode_param("Omega_a")
-        Omgb = self.get_trode_param("Omega_b")
-        Omgc = self.get_trode_param("Omega_c")
-
-        muR_enthalpy = Omga*(1-1.4*y) + Omgb*(y**2) + Omgc*(y**3)
-
-        muR = muR_IS + muR_enthalpy
-        actR = np.exp(muR/self.T)
-        muR += muRtheta + muR_ref
-        return muR, actR
-
-    def LiAgO_6(self, y, ybar, muR_ref, ISfuncs=None):
-        """ Harry QL """
-        muRtheta = -self.eokT*3.24
-        muR_IS = self.ideal_sln(y, ISfuncs=ISfuncs)
-
-        Omga = self.get_trode_param("Omega_a")
-        Omgb = self.get_trode_param("Omega_b")
-        Omgc = self.get_trode_param("Omega_c")
-        Omgd = self.get_trode_param("Omega_d")
-
-
-        muR_enthalpy = Omga + Omgb*y + Omgc*(y**1.5) + Omgd*(y**2)
-
-        muR = muR_IS + muR_enthalpy
-        actR = np.exp(muR/self.T)
-        muR += muRtheta + muR_ref
-        return muR, actR
-
-    def LiAgO_7(self, y, ybar, muR_ref, ISfuncs=None):
-        """ Harry QL """
-        muRtheta = -self.eokT*3.24
-        muR_IS = self.ideal_sln(y, ISfuncs=ISfuncs)
-
-        Omga = self.get_trode_param("Omega_a")
-        Omgb = self.get_trode_param("Omega_b")
-        Omgc = self.get_trode_param("Omega_c")
-        Omgd = self.get_trode_param("Omega_d")
-
-        muR_enthalpy = Omga + Omgb*y + Omgc*(y**2) + Omgd*(y**3)
-
-        muR = muR_IS + muR_enthalpy
-        actR = np.exp(muR/self.T)
-        muR += muRtheta + muR_ref
-        return muR, actR
 
 
 
@@ -657,14 +1111,15 @@ class muRfuncs():
         """Harry 2022 Medtronic"""
 
         y1, y2 = y
+        y1_bar, y2_bar = ybar
         # muRtheta2 = -self.eokT*2.59
 
-        muR1homog, actR1 = self.LiAgO(y1, ybar, muR_ref, ISfuncs=None)
+        muR1, actR1 = self.LiAgO(y1, y1_bar, muR_ref, ISfuncs=None)
 
-        muR2, actR2 = self.LiVO2_ss(y2, ybar, muR_ref, ISfuncs=None)
+        muR2, actR2 = self.LiVO2_ss(y2, y2_bar, muR_ref, ISfuncs=None)
 
 
-        return (muR1homog, muR2), (actR1, actR2)
+        return (muR1, muR2), (actR1, actR2)
 
 
 
@@ -673,6 +1128,16 @@ class muRfuncs():
     def LiC6_1param(self, y, ybar, muR_ref, ISfuncs=None):
         muRtheta = -self.eokT*0.12
         muRhomog = self.graphite_1param_homog_3(
+            y, self.get_trode_param("Omega_a"), self.get_trode_param("Omega_b"), ISfuncs)
+        muRnonHomog = self.general_non_homog(y, ybar)
+        muR = muRhomog + muRnonHomog
+        actR = np.exp(muR/self.T)
+        muR += muRtheta + muR_ref
+        return muR, actR
+
+    def LiC6_Liang_1param(self, y, ybar, muR_ref, ISfuncs=None):
+        muRtheta = -self.eokT*0.12
+        muRhomog = self.graphite_1param_homog_Liang(
             y, self.get_trode_param("Omega_a"), self.get_trode_param("Omega_b"), ISfuncs)
         muRnonHomog = self.general_non_homog(y, ybar)
         muR = muRhomog + muRnonHomog

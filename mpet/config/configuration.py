@@ -432,9 +432,12 @@ class Config:
         # set default 1C_current_density
         limtrode = self['limtrode']
         theoretical_1C_current = self[limtrode, 'cap'] / 3600.  # A/m^2
+
         param = '1C_current_density'
         if self[param] is None:
             # set to theoretical value
+            print(theoretical_1C_current)
+            print(self[limtrode, 'cap'])
             self[param] = theoretical_1C_current
 
         # apply scalings
@@ -468,6 +471,7 @@ class Config:
         # non-dimensional scalings
         self['T'] = self['T'] / constants.T_ref
         self['Rser'] = self['Rser'] / self['Rser_ref']
+        self['RESIS'] = self['RESIS'] / self['Rser_ref']
         self['Dp'] = self['Dp'] / self['D_ref']
         self['Dm'] = self['Dm'] / self['D_ref']
         self['c0'] = self['c0'] / constants.c_ref
@@ -490,6 +494,7 @@ class Config:
         for trode in self['trodes']:
             self['L'][trode] = self['L'][trode] / self['L_ref']
             self['beta'][trode] = self[trode, 'csmax'] / constants.c_ref
+            # self['beta'][trode] = self[trode, 'cs_ref'] / constants.c_ref
             self['sigma_s'][trode] = self['sigma_s'][trode] / self['sigma_s_ref']
 
             self[trode, 'lambda'] = self[trode, 'lambda'] / kT
@@ -534,6 +539,10 @@ class Config:
             for i in range(len(self['segments'])):
                 segments.append((-((constants.e/kT)*self['segments'][i][0]+Vref),
                                 self['segments'][i][1]*60/self['t_ref']))
+        elif self['profileType'] == 'CRsegments':
+            for i in range(len(self['segments'])):
+                segments.append((self['segments'][i][0] /self['Rser_ref'],
+                                self['segments'][i][1]*60/self['t_ref']))
 
         # Current or voltage segments profiles
         segments_tvec = np.zeros(2 * self['numsegments'] + 1)
@@ -542,6 +551,8 @@ class Config:
             segments_setvec[0] = 0.
         elif self['profileType'] == 'CVsegments':
             segments_setvec[0] = -(kT / constants.e) * Vref
+        elif self['profileType'] == 'CRsegments':
+            segments_setvec[0] = self['segments'][0][0]
         tPrev = 0.
         for segIndx in range(self['numsegments']):
             tNext = tPrev + self['tramp']
@@ -559,6 +570,8 @@ class Config:
             segments_setvec *= self["1C_current_density"]/theoretical_1C_current/self['curr_ref']
         elif self['profileType'] == 'CVsegments':
             segments_setvec = -((constants.e/kT)*segments_setvec + Vref)
+        elif self['profileType'] == 'CRsegments':
+            segments_setvec /= self['Rser_ref']
         if 'segments' in self['profileType']:
             self['tend'] = segments_tvec[-1]
             # Pad the last segment so no extrapolation occurs
@@ -630,7 +643,7 @@ class Config:
             if solidType in ['ACR']:
                 psd_num = np.ceil(raw / solidDisc).astype(int)
                 psd_len = solidDisc * psd_num
-            elif solidType in ['CHR', 'diffn', 'CHR2', 'diffn2']:
+            elif solidType in ['CHR', 'diffn', 'CHR2', 'diffn2', "diffn2_hybrid"]:
                 psd_num = np.ceil(raw / solidDisc).astype(int) + 1
                 psd_len = solidDisc * (psd_num - 1)
             # For homogeneous particles (only one 'volume' per particle)
@@ -645,7 +658,7 @@ class Config:
             if solidType2 in ['ACR']:
                 psd_num2 = np.ceil(raw2 / solidDisc).astype(int)
                 psd_len2 = solidDisc * psd_num2
-            elif solidType2 in ['CHR', 'diffn', 'CHR2', 'diffn2']:
+            elif solidType2 in ['CHR', 'diffn', 'CHR2', 'diffn2', "diffn2_hybrid"]:
                 psd_num2 = np.ceil(raw2 / solidDisc).astype(int) + 1
                 psd_len2 = solidDisc * (psd_num2 - 1)
             # For homogeneous particles (only one 'volume' per particle)
@@ -762,6 +775,7 @@ class Config:
                     nd_dgammadc = self[trode, 'dgammadc'] * cs_ref_part / gamma_S_ref
                     self[trode, 'indvPart']['beta_s'][i, j] = nd_dgammadc / kappa
                     self[trode, 'indvPart']['D'][i, j] = self[trode, 'D'] * self['t_ref'] / plen**2
+                    self[trode, 'indvPart']['D2'][i, j] = self[trode, 'D2'] * self['t_ref'] / plen**2
                     self[trode, 'indvPart']['E_D'][i, j] = self[trode, 'E_D'] \
                         / (constants.k * constants.N_A * constants.T_ref)
                     self[trode, 'indvPart']['k0'][i, j] = self[trode, 'k0'] \

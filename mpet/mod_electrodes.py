@@ -58,6 +58,8 @@ class Mod2var(dae.daeModel):
         self.dc1bardt = dae.daeVariable("dc1bardt", dae.no_t, self, "Rate of particle's first component filling")
         self.dc2bardt = dae.daeVariable("dc2bardt", dae.no_t, self, "Rate of particle's second component filling")
 
+        # self.d_delta_phi_dt = dae.daeVariable("d_delta_phi_dt", dae.no_t, self, "rate of change of potential across solid and liquid interface")
+
 
         if self.get_trode_param("type") not in ["ACR2"]:
             self.Rxn1 = dae.daeVariable("Rxn1", dae.no_t, self, "Rate of reaction 1")
@@ -154,14 +156,17 @@ class Mod2var(dae.daeModel):
         for k in range(N):
             eq.Residual -= self.c2.dt(k) * volfrac_vec[k]
 
+        # eq = self.CreateEquation("d_delta_phi_dt")
+        # eq.Residual = self.d_delta_phi_dt() -  (self.phi_m().dt(0) - self.phi_lyte().dt(0))
+
 
         c1 = np.empty(N, dtype=object)
         c2 = np.empty(N, dtype=object)
         c1[:] = [self.c1(k) for k in range(N)]
         c2[:] = [self.c2(k) for k in range(N)]
-        if self.get_trode_param("type") in ["diffn2", "CHR2"]:
+        if self.get_trode_param("type") in ["diffn2", "CHR2", "diffn2_hybrid"]:
             # Equations for 1D particles of 1 field varible
-            self.sld_dynamics_1D2var(c1, c2, mu_O, act_lyte, ISfuncs, noises)
+            self.sld_dynamics_1D2var_SVO_hybrid(c1, c2, mu_O, act_lyte, ISfuncs, noises)
         elif self.get_trode_param("type") in ["homog2", "homog2_sdn"]:
             # Equations for 0D particles of 1 field variables
             self.sld_dynamics_0D2var(c1, c2, mu_O, act_lyte, ISfuncs, noises)
@@ -232,6 +237,96 @@ class Mod2var(dae.daeModel):
         eq1.Residual = self.c1.dt(0) - self.get_trode_param("delta_L")*Rxn1[0]
         # eq2.Residual = self.c2.dt(0) - self.get_trode_param("delta_L")*Rxn2[0]
         eq2.Residual = self.c2.dt(0) - 0.5*self.get_trode_param("delta_L")*Rxn2[0]
+
+
+    def sld_dynamics_1D2var_SVO_hybrid(self, c1, c2, muO, act_lyte, ISfuncs, noises):
+        N = self.get_trode_param("N")
+        T = self.config["T"]
+        # Equations for concentration evolution
+        # Mass matrix, M, where M*dcdt = RHS, where c and RHS are vectors
+        Mmat = get_Mmat(self.get_trode_param('shape'), N)
+        dr, edges = geo.get_dr_edges(self.get_trode_param('shape'), N)
+
+        # Get solid particle chemical potential, overpotential, reaction rate
+        if self.get_trode_param("type") in ["diffn2", "CHR2", "diffn2_hybrid"]:
+            (mu1R, mu2R), (act1R, act2R) = calc_muR(
+                (c1, c2), (self.c1bar(), self.c2bar()), self.config,
+                self.trode, self.ind, ISfuncs)
+            c1_surf = c1[-1]
+            c2_surf = c2[-1]
+            mu1R_surf, act1R_surf = mu1R[-1], act1R[-1]
+            mu2R_surf, act2R_surf = mu2R[-1], None
+        eta1 = calc_eta(mu1R_surf, muO)
+        eta2 = calc_eta(mu2R_surf, muO)
+        if self.get_trode_param("type") in ["ACR2"]:
+            eta1_eff = np.array([eta1[i]
+                                 + self.Rxn1(i)*self.get_trode_param("Rfilm") for i in range(N)])
+            eta2_eff = np.array([eta2[i]
+                                 + self.Rxn2(i)*self.get_trode_param("Rfilm") for i in range(N)])
+        else:
+            eta1_eff = eta1 + self.Rxn1()*self.get_trode_param("Rfilm")
+            eta2_eff = eta2 + self.Rxn2()*self.get_trode_param("Rfilm")
+        Rxn1, Rxn2 = self.calc_rxn_rate(eta1_eff, eta2_eff, c1_surf, c2_surf, self.c_lyte(), self.get_trode_param("k0"),self.get_trode_param("k1"),
+            self.get_trode_param("E_A"), T, act1R_surf, act_lyte, self.get_trode_param("lambda"), self.get_trode_param("alpha"))
+        if self.get_trode_param("type") in ["ACR2"]:
+            for i in range(N):
+                eq1 = self.CreateEquation("Rxn1_{i}".format(i=i))
+                eq2 = self.CreateEquation("Rxn2_{i}".format(i=i))
+                eq1.Residual = self.Rxn1(i) - Rxn1[i]
+                eq2.Residual = self.Rxn2(i) - Rxn2[i]
+        else:
+            eq1 = self.CreateEquation("Rxn1")
+            eq2 = self.CreateEquation("Rxn2")
+            eq1.Residual = self.Rxn1() - Rxn1
+            eq2.Residual = self.Rxn2() - 0.5*Rxn2
+
+        # Get solid particle fluxes (if any) and RHS
+        if self.get_trode_param("type") in ["diffn2", "CHR2", "diffn2_hybrid"]:
+            # Positive reaction (reduction, intercalation) is negative
+            # flux of Li at the surface.
+            # Flux1_bc = -0.5 * self.Rxn1()
+            # Flux2_bc = -0.5 * self.Rxn2()
+            Flux1_bc = -(1/3) * self.Rxn1()
+            Flux2_bc = -(2/3) * self.Rxn2()
+            Dfunc = props_am.Dfuncs(self.get_trode_param("Dfunc")).Dfunc
+            if self.get_trode_param("type") == "diffn2_hybrid":
+                # pass
+               # Flux1_vec, Flux2_vec = calc_flux_diffn2(c1, c2, self.get_trode_param("D"), Dfunc, self.get_trode_param("E_D"), Flux1_bc, Flux2_bc, dr, T)
+               Flux1_vec, Flux2_vec = calc_flux_diffn2(c1, c2, mu1R, self.get_trode_param("D"), self.get_trode_param("D2"), Dfunc, self.get_trode_param("E_D"), Flux1_bc, Flux2_bc, dr, T)
+
+
+            elif self.get_trode_param("type") == "CHR2":
+                noise1, noise2 = noises
+                Flux1_vec, Flux2_vec = calc_flux_CHR2(
+                    c1, c2, mu1R, mu2R, self.get_trode_param("D"), Dfunc,
+                    self.get_trode_param("E_D"), Flux1_bc, Flux2_bc, dr, T, noise1, noise2)
+            if self.get_trode_param("shape") == "sphere":
+                area_vec = 4*np.pi*edges**2
+            elif self.get_trode_param("shape") == "cylinder":
+                area_vec = 2*np.pi*edges  # per unit height
+            RHS1 = -np.diff(Flux1_vec * area_vec)
+            RHS2 = -np.diff(Flux2_vec * area_vec)
+#            kinterlayer = 1e-3
+#            interLayerRxn = (kinterlayer * (1 - c1) * (1 - c2) * (act1R - act2R))
+#            RxnTerm1 = -interLayerRxn
+#            RxnTerm2 = interLayerRxn
+            RxnTerm1 = 0
+            RxnTerm2 = 0
+            RHS1 += RxnTerm1
+            RHS2 += RxnTerm2
+
+        dc1dt_vec = np.empty(N, dtype=object)
+        dc2dt_vec = np.empty(N, dtype=object)
+        dc1dt_vec[0:N] = [self.c1.dt(k) for k in range(N)]
+        dc2dt_vec[0:N] = [self.c2.dt(k) for k in range(N)]
+        LHS1_vec = MX(Mmat, dc1dt_vec)
+        LHS2_vec = MX(Mmat, dc2dt_vec)
+        for k in range(N):
+            eq1 = self.CreateEquation("dc1sdt_discr{k}".format(k=k))
+            eq2 = self.CreateEquation("dc2sdt_discr{k}".format(k=k))
+            eq1.Residual = LHS1_vec[k] - RHS1[k]
+            eq2.Residual = LHS2_vec[k] - 0.5*RHS2[k]
+            # eq2.Residual = LHS2_vec[k] - RHS2[k]
 
 
 
@@ -443,8 +538,10 @@ class Mod1var(dae.daeModel):
             self.get_trode_param("lambda"), self.get_trode_param("alpha2"))
         eq3 = self.CreateEquation("Rxn3")
         eq3.Residual = self.Rxn3() - (1/5.515)* Rxn3[0]
+        # eq3.Residual = self.Rxn3() - (1/5.01865)* Rxn3[0]
 
         eq3 = self.CreateEquation("dc3sdt")
+        # eq3.Residual = self.c3.dt(0) - self.get_trode_param("delta_L")*self.Rxn3()
         eq3.Residual = self.c3.dt(0) - (1/5.515)*self.get_trode_param("delta_L")*self.Rxn3()
 
 
@@ -553,6 +650,59 @@ def calc_flux_diffn(c, D, Dfunc, E_D, Flux_bc, dr, T, noise):
             np.diff(c + noise(dae.Time().Value))/dr
     return Flux_vec
 
+# def calc_flux_diffn2(c1, c2, D, Dfunc, E_D, Flux1_bc, Flux2_bc, dr, T):
+#     N = len(c1)
+#     Flux1_vec = np.empty(N+1, dtype=object)
+#     Flux2_vec = np.empty(N+1, dtype=object)
+#     Flux1_vec[0] = 0.  # symmetry at r=0
+#     Flux2_vec[0] = 0.  # symmetry at r=0
+#     Flux1_vec[-1] = Flux1_bc
+#     Flux2_vec[-1] = Flux2_bc
+#     c1_edges = utils.mean_linear(c1)
+#     c2_edges = utils.mean_linear(c2)
+#
+#     Flux1_vec[1:N] = -D*(10**6) * Dfunc(c1_edges) * np.exp(-E_D/T + E_D/1) * np.diff(c1)/dr
+#     Flux2_vec[1:N] = -D * Dfunc(c1_edges) * np.exp(-E_D/T + E_D/1) * np.diff(c2)/dr
+#
+#     # if noise is None:
+#     #     Flux1_vec[1:N] = -D * Dfunc(c1_edges) * np.exp(-E_D/T + E_D/1) * np.diff(c1)/dr
+#     #     Flux2_vec[1:N] = -D * Dfunc(c2_edges) * np.exp(-E_D/T + E_D/1) * np.diff(c2)/dr
+#     # else:
+#     #     Flux1_vec[1:N] = -D * Dfunc(c1_edges) * np.exp(-E_D/T + E_D/1) * \
+#     #         np.diff(c1 + noise(dae.Time().Value))/dr
+#     #     Flux2_vec[1:N] = -D * Dfunc(c2_edges) * np.exp(-E_D/T + E_D/1) * \
+#     #         np.diff(c2 + noise(dae.Time().Value))/dr
+#     return Flux1_vec, Flux2_vec
+
+def calc_flux_diffn2(c1, c2, mu1_R, D, D2, Dfunc, E_D, Flux1_bc, Flux2_bc, dr, T):
+    N = len(c1)
+    Flux1_vec = np.empty(N+1, dtype=object)
+    Flux2_vec = np.empty(N+1, dtype=object)
+    Flux1_vec[0] = 0.  # symmetry at r=0
+    Flux2_vec[0] = 0.  # symmetry at r=0
+    Flux1_vec[-1] = Flux1_bc
+    Flux2_vec[-1] = Flux2_bc
+    c1_edges = utils.mean_linear(c1)
+    c2_edges = utils.mean_linear(c2)
+
+    # Flux1_vec[1:N] = -D*(10**4)/T * Dfunc(c1_edges) * np.exp(-E_D/T + E_D/1) * np.diff(mu1_R)/dr
+    # Flux1_vec[1:N] = -D*(10**6)/T * c1_edges*(1-c1_edges) * np.exp(-E_D/T + E_D/1) * np.diff(mu1_R)/dr
+    Flux1_vec[1:N] = -D*(10**3)/T * np.exp(-E_D/T + E_D/1) * np.diff(mu1_R)/dr
+
+    Flux2_vec[1:N] = -D2 * Dfunc(c1_edges) * np.exp(-E_D/T + E_D/1) * np.diff(c2)/dr
+    # Flux2_vec[1:N] = -D*(10**1)  * np.exp(-E_D/T + E_D/1) * np.diff(c2)/dr
+
+    # if noise is None:
+    #     Flux1_vec[1:N] = -D * Dfunc(c1_edges) * np.exp(-E_D/T + E_D/1) * np.diff(c1)/dr
+    #     Flux2_vec[1:N] = -D * Dfunc(c2_edges) * np.exp(-E_D/T + E_D/1) * np.diff(c2)/dr
+    # else:
+    #     Flux1_vec[1:N] = -D * Dfunc(c1_edges) * np.exp(-E_D/T + E_D/1) * \
+    #         np.diff(c1 + noise(dae.Time().Value))/dr
+    #     Flux2_vec[1:N] = -D * Dfunc(c2_edges) * np.exp(-E_D/T + E_D/1) * \
+    #         np.diff(c2 + noise(dae.Time().Value))/dr
+    return Flux1_vec, Flux2_vec
+
+
 
 def calc_flux_CHR(c, mu, D, Dfunc, E_D, Flux_bc, dr, T, noise):
     N = len(c)
@@ -593,6 +743,17 @@ def calc_mu_O(c_lyte, phi_lyte, phi_sld, T, elyteModelType):
     if elyteModelType == "SM":
         mu_lyte = phi_lyte
         act_lyte = c_lyte
+    # if elyteModelType == "SM":
+    #     a = 0.696070566996749
+    #     b = -5.80198978215293
+    #     d = 24.820954868413
+    #     e = -42.6835219535502
+    #     f = 32.4889860113285
+    #     g = -9.07900445005268
+    #     h = 0.180490199371271
+    #     act_lyte = 1.2947 + a*np.log(c_lyte) + b*c_lyte + 0.5*d*c_lyte**2 + (1/3)*e*c_lyte**3 + (1/4)*f*c_lyte**4 + (1/5)*g*c_lyte**5 + (1/8)*h*(1-0.0052*(310.15-298))*c_lyte**8
+    #     mu_lyte = phi_lyte + T*act_lyte
+        # act_lyte = c_lyte
     elif elyteModelType == "dilute":
         act_lyte = c_lyte
         mu_lyte = T*np.log(act_lyte) + phi_lyte

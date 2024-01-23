@@ -75,7 +75,7 @@ bulkpHdr = ("Bulk electrode electric potential [V]\n" + RowsStr + bulkpHdrP2)
 fnameBulkpBase = "bulkPot{l}Data.txt"
 
 
-def main(indir, genData=True, discData=False, elyteData=False,
+def main(indir, genData=True, discData=True, elyteData=False,
          csldData=False, cbarData=False, bulkpData=False):
     config = plot_data.show_data(
         indir, plot_type="params", print_flag=False, save_flag=False,

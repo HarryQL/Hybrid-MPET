@@ -11,7 +11,7 @@ N_A = 6.022e23
 #: Reference flux, C/mol
 F = e * N_A
 #: General particle classification (1 var)
-two_var_types = ["diffn2", "CHR2", "homog2", "homog2_sdn", "homog2_hybrid"]
+two_var_types = ["diffn2", "CHR2", "homog2", "homog2_sdn", "homog2_hybrid", "diffn2_hybrid"]
 #: General particle classification (2 var)
 one_var_types = ["ACR", "diffn", "CHR", "homog", "homog_sdn"]
 #: Reference concentration, mol/m^3 = 1M
@@ -22,12 +22,12 @@ c_ref = 1000.
 #                     'simPartCond', 'G_mean', 'G_stddev', 'L', 'P_L', 'poros', 'BruggExp',
 #                     'specified_psd']
 
-PARAMS_PER_TRODE = ['Nvol', 'Npart', 'Npart2','mean', 'stddev','mean2', 'stddev2', 'cs0', 'simBulkCond', 'sigma_s',
+PARAMS_PER_TRODE = ['Nvol', 'Npart', 'Npart2','mean', 'stddev','mean2', 'stddev2', 'cs0', 'cs0_1','cs0_2','cs0_3','simBulkCond', 'sigma_s',
                     'simPartCond', 'G_mean', 'G_stddev', 'L', 'P_L', 'poros', 'BruggExp',
                     'specified_psd']
 #: subset of ``PARAMS_PER_TRODE``` that is defined for the separator as well
 PARAMS_SEPARATOR = ['Nvol', 'L', 'poros', 'BruggExp']
 #: parameters that are defined for each particle, and their type
-PARAMS_PARTICLE = {'N': int, 'kappa': float, 'beta_s': float, 'D': float, 'k0': float, 'k1': float, 'k2': float,
+PARAMS_PARTICLE = {'N': int, 'kappa': float, 'beta_s': float, 'D': float, 'D2': float, 'k0': float, 'k1': float, 'k2': float,
                    'Rfilm': float, 'delta_L': float, 'Omega_a': float, 'E_D': float,
                    'E_A': float}

@@ -98,3 +98,24 @@ def get_elyte_disc(Nvol, L, poros, BruggExp):
     out["eps_o_tau"] = porosvec_pad/porosvec_pad**(Brugg_pad)
 
     return out
+
+def get_elyte_disc2(Nvol, L, poros, BruggExp, porosity_vector):
+    out = {}
+    # Width of each cell
+    out["dxvec"] = utils.get_dxvec(L, Nvol)
+
+    # Distance between cell centers
+    dxtmp = np.hstack((out["dxvec"][0], out["dxvec"], out["dxvec"][-1]))
+    out["dxd1"] = utils.mean_linear(dxtmp)
+
+    # The porosity vector
+    out["porosvec"] = utils.get_asc_vec2(poros, Nvol, porosity_vector)
+    porosvec_pad = utils.pad_vec(out["porosvec"])
+
+    # Vector of Bruggeman exponents
+    Brugg_pad = utils.pad_vec(utils.get_asc_vec(BruggExp, Nvol))
+
+    # Vector of posority/tortuosity (assuming Bruggeman)
+    out["eps_o_tau"] = porosvec_pad/porosvec_pad**(Brugg_pad)
+
+    return out
