@@ -7,13 +7,13 @@ Coming soon.
 ||                    |
 | ------------- | ------------------------------ |
 | **AUTHORS**      | Qiaohao Liang     |
-| **VERSION**      | Jan 25, 2023     |
+| **VERSION**      | Feb 5, 2023     |
 | **EMAILS**      | hqliang@mit.edu |
 ||                    |
 
 
 Abstract:
-Coming soon.
+We present a physics-based model that accurately predicts the performance of Medtronic's implantable medical device battery lithium/carbon monofluoride (CFx) - silver vanadium oxide (SVO) under both low-rate background monitoring and high-rate pulsing currents. The distinct properties of multiple active materials are reflected by parameterizing their thermodynamics, kinetics, and mass transport properties separately. Diffusion limitations of Li+ in SVO are used to explain cell voltage transient behavior during pulse and post-pulse relaxation. We also introduce change in cathode electronic conductivity, Li metal anode surface morphology, and film resistance buildup to capture evolution of cell internal resistance throughout multi-year electrical tests. We share our insights on how the Li+ redistribution process between active materials can restore pulse capability of the hybrid electrode, allow CFx to indirectly contribute to capacity release during pulsing, and affect the operation protocols and design principles of batteries with other hybrid electrodes. We also discuss additional complexities in porous electrode model parameterization and electrochemical characterization techniques due to parallel reactions and solid diffusion pathways across active materials. We hope our models implemented in the Hybrid Multiphase Porous Electrode Theory (Hybrid-MPET) framework can complement future experimental research and accelerate development of multi-active material electrodes with targeted performance.
 
 ## Citation 
 
@@ -27,7 +27,7 @@ This work is under MIT License. Please, acknowledge use of this work with the ap
 Install `MPET` by referencing the following guide `https://mpet.readthedocs.io/en/latest/install.html`. Replace the `mpet` folder from MPET with the `mpet` folder from this `Hybrid-MPET` repository, and manage environments via `conda`.
 
 ## Testing and sample usage
-In `sample` folder, Coming soon.
+In `sample` folder, I've prepared thef configurations files that can run Hybrid-MPET model of the representative cell highlighted in the paper. In folder `high_rate_representative`, the material parameters are set in `params_CSVO.cfg`. Additional parameters as well as battery operation protocols are set in `params_system.cfg`.
 
 Run `mpetrun.py`, passing `params_system.cfg` as an argument: `mpetrun.py params_system.cfg`
 To extract macroscopic results such as cell voltage, current, state of charge, etc. into csv or txt format: `mpetplot.py sim_output text`
