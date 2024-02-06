@@ -1,23 +1,23 @@
-# Hybrid-MPET
+# Hybrid-MPET Medtronic Pulse
 
-Hybrid-MPET: an open-source simulation software for hybrid electrode batteries
+Coming soon.
 
 
 ## Authors
 ||                    |
 | ------------- | ------------------------------ |
 | **AUTHORS**      | Qiaohao Liang     |
-| **VERSION**      | May 24, 2023     |
+| **VERSION**      | Jan 25, 2023     |
 | **EMAILS**      | hqliang@mit.edu |
 ||                    |
 
 
 Abstract:
-As the design of single-component battery electrodes has matured, the battery industry has turned to hybrid electrodes with blends of two or more active materials to enhance battery performance. Leveraging the best properties of each material while mitigating their drawbacks, multi-component hybrid electrodes open a vast new design space that could be most efficiently explored through simulations. In this article, we introduce a mathematical modeling framework and open-source battery simulation software package for Hybrid Multiphase Porous Electrode Theory (Hybrid-MPET), capable of accounting for the parallel reactions, phase transformations and multiscale heterogeneities in hybrid porous electrodes.  Hybrid-MPET models can simulate both solid solution and multiphase active materials in hybrid electrodes at intra-particle and inter-particle scales. Its modular design also allows the combination of different active materials at any capacity fraction. To illustrate the novel features of Hybrid-MPET, we present experimentally validated models of silicon-graphite (Si-Gr) anodes used in electric vehicle batteries and carbon monofluoride (CFx) - silver vanadium oxide (SVO) cathodes used in implantable medical device batteries. The results demonstrate the potential of Hybrid-MPET models to accelerate the development of hybrid electrode batteries by providing fast predictions of their performance over a wide range of design parameters and operating protocols.
+Coming soon.
 
 ## Citation 
 
-Liang, Q., and Bazant, M.Z., 2023. Hybrid-MPET: an open-source simulation software for hybrid electrode batteries. arXiv preprint. arXiv:2305.15599. (https://arxiv.org/pdf/2305.15599.pdf)
+Coming soon.
 
 
 ## Attribution
@@ -27,7 +27,7 @@ This work is under MIT License. Please, acknowledge use of this work with the ap
 Install `MPET` by referencing the following guide `https://mpet.readthedocs.io/en/latest/install.html`. Replace the `mpet` folder from MPET with the `mpet` folder from this `Hybrid-MPET` repository, and manage environments via `conda`.
 
 ## Testing and sample usage
-In `sample` folder, I've prepared two sets of configurations files that can help you test your installation and run Hybrid-MPET. The configurations set up Hybrid-MPET models for constant current discharge of HB1 and HB3 batteries from Gomadam, P.M,  et al. Journal of the Electrochemical Society (2007). In either folder `CSVO_HB1_400muA` or `CSVO_HB3_940muA`, the material parameters are set in `params_CSVO.cfg`. Additional parameters as well as battery operation protocols are set in `params_system.cfg`.
+In `sample` folder, Coming soon.
 
 Run `mpetrun.py`, passing `params_system.cfg` as an argument: `mpetrun.py params_system.cfg`
 To extract macroscopic results such as cell voltage, current, state of charge, etc. into csv or txt format: `mpetplot.py sim_output text`
