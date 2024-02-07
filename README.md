@@ -1,6 +1,6 @@
 # Hybrid-MPET Medtronic Pulse
 
-Coming soon.
+Physics-based Modeling of Pulse and Relaxation of High-rate Li/CFx-SVO batteries in Implantable Medical Devices
 
 
 ## Authors
@@ -17,7 +17,7 @@ We present a physics-based model that accurately predicts the performance of Med
 
 ## Citation 
 
-Coming soon.
+`Liang, Q., Galuppini, G., Gomadam, P., Tamirisa, P., Lemmerman, J., Mazack, M., Sullivan, M., Braatz, R., and Bazant M.Z. (2024). Physics-based Modeling of Pulse and Relaxation of High-rate Li/CFx-SVO batteries in Implantable Medical Devices. arXiv. arXiv:2402.03677 [https://arxiv.org/abs/2402.03677]`
 
 
 ## Attribution
